@@ -205,7 +205,15 @@ void clean_frame(){
 void quad(float *pos, float scale, float *color)
 {
 
+    //glEnable(GL_DEPTH_TEST);  
+    //glDepthFunc(GL_LESS);  
 
+    if(color[3] < 1.0){
+
+    }else{
+        glEnable(GL_BLEND); 
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    }
     
 
     glUseProgram(obj_shader);
