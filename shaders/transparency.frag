@@ -8,9 +8,7 @@ void main() {
     float alpha = color.a;
     float weight = alpha;
 
-    accumColor.rgb += color.rgb * weight;
-    accumColor.a += alpha;
-    accumWeight += weight;
-    //accumColor = color;
+    accumColor.rgb = color.rgb * weight;
+    accumColor.a = alpha;
+    accumWeight = weight;
 }
-

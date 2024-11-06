@@ -12,4 +12,6 @@ void main() {
     
     finalColor.rgb = colorAccum / max(weightAccum, 0.0001);
     finalColor.a = weightAccum;
+    
+    finalColor = texture(colorTexture, uv);
 }

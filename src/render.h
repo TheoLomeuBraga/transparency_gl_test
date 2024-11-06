@@ -107,7 +107,7 @@ unsigned int quad_index[18]{
 
 GLuint VAO, VBO, EBO;
 GLuint obj_shader, post_prossesing_shader;
-GLuint framebuffer,depthTexture , colorTexture, weightTexture;
+GLuint framebuffer, depthTexture, colorTexture, weightTexture;
 
 void render_init()
 {
@@ -149,8 +149,6 @@ void render_init()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 640, 480, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
 
-
-
     glGenTextures(1, &weightTexture);
     glBindTexture(GL_TEXTURE_2D, weightTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 640, 480, 0, GL_RED, GL_FLOAT, NULL);
@@ -160,14 +158,13 @@ void render_init()
 
     GLuint attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
     glDrawBuffers(2, attachments);
-
 }
 
 void post_processing()
 {
 
-    glDisable(GL_DEPTH_TEST);  
-    
+    glDisable(GL_DEPTH_TEST);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -186,39 +183,44 @@ void post_processing()
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-
-    
 }
 
-void clean_frame(){
+void clean_frame()
+{
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    
 }
 
 void quad(float *pos, float scale, float *color)
 {
 
-    glEnable(GL_DEPTH_TEST);  
-    glDepthFunc(GL_LESS);  
+    glBindFramebuffer(GL_FRAMEBUFFER, colorTexture);
 
-    
-    glEnablei(GL_BLEND,framebuffer); 
-    glBlendFunci(framebuffer,GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
-    
-    if(color[3] < 1.0){
+    if (color[3] < 1.0)
+    {
+
+        glDepthMask(GL_FALSE);
 
         
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    }else{
-
+        glEnable(GL_BLEND);
+        glBlendFunci(0, GL_ONE, GL_ONE);                  // accumulation blend target
+        glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR); // revealge blend target
+        glBlendEquation(GL_FUNC_ADD);
     }
-    
+    else
+    {
+        glDepthMask(GL_TRUE);
+        
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+    }
 
     glUseProgram(obj_shader);
 
@@ -226,13 +228,14 @@ void quad(float *pos, float scale, float *color)
     glUniform1f(glGetUniformLocation(obj_shader, "scale"), scale);
     glUniform4f(glGetUniformLocation(obj_shader, "color"), color[0], color[1], color[2], color[3]);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, colorTexture);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, weightTexture, 0);
-    
+
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    glDepthMask(GL_TRUE);
 }
 
 const float very_far = 0;
@@ -242,9 +245,9 @@ const float near = -0.9;
 const float very_near = -1.0;
 
 float opaque_red[4] = {1.0, 0.0, 0.0, 1.0};
-float transparent_green[4] = {0.0, 1.0, 0.0, 0.2};
-float transparent_blue[4] = {0.0, 0.0, 1.0, 0.2};
-float transparent_pink[4] = {1.0, 0.0, 1.0, 0.2};
+float transparent_green[4] = {0.0, 1.0, 0.0, 0.99};
+float transparent_blue[4] = {0.0, 0.0, 1.0, 0.75};
+float transparent_pink[4] = {1.0, 0.0, 1.0, 0.75};
 
 void render_process(float delta)
 {
