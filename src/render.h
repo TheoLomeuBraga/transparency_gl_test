@@ -107,7 +107,7 @@ unsigned int quad_index[18]{
 
 GLuint VAO, VBO, EBO;
 GLuint obj_shader, post_prossesing_shader;
-GLuint framebuffer, colorTexture, weightTexture;
+GLuint framebuffer,depthTexture , colorTexture, weightTexture;
 
 void render_init()
 {
@@ -144,6 +144,13 @@ void render_init()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
 
+    glGenTextures(1, &depthTexture);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 640, 480, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+
+
+
     glGenTextures(1, &weightTexture);
     glBindTexture(GL_TEXTURE_2D, weightTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 640, 480, 0, GL_RED, GL_FLOAT, NULL);
@@ -158,16 +165,20 @@ void render_init()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void post_processing(){
+void post_processing()
+{
+
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, colorTexture);
     glUniform1i(glGetUniformLocation(post_prossesing_shader, "colorTexture"), 0);
 
-    // Ativa o ponto de textura 1 e vincula o `weightTexture`
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, weightTexture);
     glUniform1i(glGetUniformLocation(post_prossesing_shader, "weightTexture"), 1);
@@ -178,12 +189,34 @@ void post_processing(){
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void quad(float *pos,float scale,float *color){
+void quad(float *pos, float scale, float *color)
+{
+    
+
+    if (color[3] == 1.0)
+    {
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+    }
+    else
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_DEPTH_TEST);
+    }
+
+    
+
     glUseProgram(obj_shader);
 
-    glUniform3f(glGetUniformLocation(obj_shader, "position"), pos[0],pos[1],pos[2]);
+    glUniform3f(glGetUniformLocation(obj_shader, "position"), pos[0], pos[1], pos[2]);
     glUniform1f(glGetUniformLocation(obj_shader, "scale"), scale);
     glUniform4f(glGetUniformLocation(obj_shader, "color"), color[0], color[1], color[2], color[3]);
 
@@ -191,22 +224,43 @@ void quad(float *pos,float scale,float *color){
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, weightTexture, 0);
 
-
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-
 }
+
+const float far = 0;
+const float not_so_far = -0.5;
+const float near = -1.0;
 
 void render_process(float delta)
 {
 
-    float pos [3] = { -0.5, -0.5, 0.0};
-    float color [4] = { 1.0,1.0,1.0,1.0};
-    quad(pos,1,color);
+    float pos[3] = {-0.5, -0.5, near};
+    float color[4] = {1.0, 0.0, 0.0, 1.0};
+    quad(pos, 1, color);
+
+    pos[0] = -0.4;
+    pos[1] = -0.4;
+    color[3] = 0.5;
+    pos[2] = not_so_far;
+
+    color[0] = 0;
+    color[1] = 1;
+    color[3] = 0.5;
+    quad(pos, 1, color);
+
+    pos[0] = -0.3;
+    pos[1] = -0.3;
+    pos[2] = far;
+
+    color[0] = 0;
+    color[2] = 1;
+    color[3] = 0.5;
+    quad(pos, 1, color);
 
     post_processing();
-
 }
 
 void render_end()
