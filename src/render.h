@@ -207,13 +207,16 @@ void quad(float *pos, float scale, float *color)
     glEnable(GL_DEPTH_TEST);  
     glDepthFunc(GL_LESS);  
 
+    
+    glEnablei(GL_BLEND,framebuffer); 
+    glBlendFunci(framebuffer,GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    
     if(color[3] < 1.0){
-        glDepthMask(GL_TRUE);
+
+        
 
     }else{
-        glDepthMask(GL_FALSE);
-        glEnable(GL_BLEND); 
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+
     }
     
 
@@ -239,9 +242,9 @@ const float near = -0.9;
 const float very_near = -1.0;
 
 float opaque_red[4] = {1.0, 0.0, 0.0, 1.0};
-float transparent_green[4] = {0.0, 1.0, 0.0, 1.0};
-float transparent_blue[4] = {0.0, 0.0, 1.0, 1.0};
-float transparent_pink[4] = {1.0, 0.0, 1.0, 1.0};
+float transparent_green[4] = {0.0, 1.0, 0.0, 0.2};
+float transparent_blue[4] = {0.0, 0.0, 1.0, 0.2};
+float transparent_pink[4] = {1.0, 0.0, 1.0, 0.2};
 
 void render_process(float delta)
 {
