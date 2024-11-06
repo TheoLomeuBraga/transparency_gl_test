@@ -161,14 +161,13 @@ void render_init()
     GLuint attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
     glDrawBuffers(2, attachments);
 
-    glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void post_processing()
 {
 
-    glDepthMask(GL_FALSE); 
+    glDisable(GL_DEPTH_TEST);  
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -205,12 +204,14 @@ void clean_frame(){
 void quad(float *pos, float scale, float *color)
 {
 
-    //glEnable(GL_DEPTH_TEST);  
-    //glDepthFunc(GL_LESS);  
+    glEnable(GL_DEPTH_TEST);  
+    glDepthFunc(GL_LESS);  
 
     if(color[3] < 1.0){
+        glDepthMask(GL_TRUE);
 
     }else{
+        glDepthMask(GL_FALSE);
         glEnable(GL_BLEND); 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
     }
@@ -240,7 +241,6 @@ const float very_near = -1.0;
 float opaque_red[4] = {1.0, 0.0, 0.0, 1.0};
 float transparent_green[4] = {0.0, 1.0, 0.0, 1.0};
 float transparent_blue[4] = {0.0, 0.0, 1.0, 1.0};
-
 float transparent_pink[4] = {1.0, 0.0, 1.0, 1.0};
 
 void render_process(float delta)
@@ -248,22 +248,22 @@ void render_process(float delta)
 
     clean_frame();
 
-    float pos[3] = {-0.5, -0.5, near};
+    float pos[3] = {-0.5, -0.5, very_near};
     quad(pos, 1, opaque_red);
 
     pos[0] = -0.4;
     pos[1] = -0.4;
-    pos[2] = not_so_far;
+    pos[2] = near;
     quad(pos, 1, transparent_green);
 
     pos[0] = -0.3;
     pos[1] = -0.3;
-    pos[2] = far;
+    pos[2] = not_so_far;
     quad(pos, 1, transparent_blue);
 
     pos[0] = -0.2;
     pos[1] = -0.2;
-    pos[2] = very_far;
+    pos[2] = far;
     quad(pos, 1, transparent_pink);
 
     post_processing();
