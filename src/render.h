@@ -8,9 +8,11 @@
 #include <sstream>
 #include <string>
 
-std::string readFile(std::string& filePath) {
+std::string readFile(std::string &filePath)
+{
     std::ifstream file(filePath);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         return "";
     }
 
@@ -19,15 +21,17 @@ std::string readFile(std::string& filePath) {
     return buffer.str();
 }
 
-GLuint compileShader(std::string& source, GLenum shaderType) {
+GLuint compileShader(std::string &source, GLenum shaderType)
+{
     GLuint shader = glCreateShader(shaderType);
-    const char* sourceCStr = source.c_str();
+    const char *sourceCStr = source.c_str();
     glShaderSource(shader, 1, &sourceCStr, nullptr);
     glCompileShader(shader);
-    
+
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
+    if (!success)
+    {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
         std::cerr << infoLog << std::endl;
@@ -37,93 +41,136 @@ GLuint compileShader(std::string& source, GLenum shaderType) {
     return shader;
 }
 
+GLuint loadShaderFromFile(std::string vertexPath, std::string fragmentPath)
+{
 
-GLuint loadShaderFromFile(std::string vertexPath, std::string fragmentPath) {
-    
     std::string vertexCode = readFile(vertexPath);
     std::string fragmentCode = readFile(fragmentPath);
 
-    if (vertexCode.empty() || fragmentCode.empty()) {
+    if (vertexCode.empty() || fragmentCode.empty())
+    {
         return 0;
     }
-    
+
     GLuint vertexShader = compileShader(vertexCode, GL_VERTEX_SHADER);
     GLuint fragmentShader = compileShader(fragmentCode, GL_FRAGMENT_SHADER);
 
-    if (vertexShader == 0 || fragmentShader == 0) {
-        return 0; 
+    if (vertexShader == 0 || fragmentShader == 0)
+    {
+        return 0;
     }
-    
+
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
-    
+
     GLint success;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
+    if (!success)
+    {
         char infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
         std::cerr << infoLog << std::endl;
         glDeleteProgram(shaderProgram);
         shaderProgram = 0;
     }
-    
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
     return shaderProgram;
 }
 
-float quad_pos[18] {
-    0.0f,  1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-     1.0f,  1.0f, 0.0f,
-     1.0f,  1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-     1.0f, 0.0f, 0.0f,
+float quad_pos[18]{
+    0.0f,
+    1.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    1.0f,
+    1.0f,
+    0.0f,
+    1.0f,
+    1.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    1.0f,
+    0.0f,
+    0.0f,
 };
-unsigned int quad_index[18] {
-    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17
-};
+unsigned int quad_index[18]{
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17};
 
 GLuint VAO, VBO, EBO;
-GLuint obj_shader,post_prossesing_shader;
+GLuint obj_shader, post_prossesing_shader;
+GLuint framebuffer, colorTexture, weightTexture;
 
-void render_init(){
+void render_init()
+{
 
     obj_shader = loadShaderFromFile("generic.vert", "transparency.frag");
 
-
     post_prossesing_shader = loadShaderFromFile("generic.vert", "post_processing.frag");
-    
 
-
-    // Gerar VAO, VBO e EBO
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-    
+
     glBindVertexArray(VAO);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quad_pos), quad_pos, GL_STATIC_DRAW);
-    
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_index), quad_index, GL_STATIC_DRAW);
-    
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glGenTextures(1, &colorTexture);
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 640, 480, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+
+    glGenTextures(1, &weightTexture);
+    glBindTexture(GL_TEXTURE_2D, weightTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R16F, 640, 480, 0, GL_RED, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, weightTexture, 0);
+
+    GLuint attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+    glDrawBuffers(2, attachments);
+
+    glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void render_process(float delta){
-
+void post_processing(){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
+
     glClear(GL_COLOR_BUFFER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
+    glUniform1i(glGetUniformLocation(post_prossesing_shader, "colorTexture"), 0);
+
+    // Ativa o ponto de textura 1 e vincula o `weightTexture`
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, weightTexture);
+    glUniform1i(glGetUniformLocation(post_prossesing_shader, "weightTexture"), 1);
 
     glUseProgram(post_prossesing_shader);
     glUniform3f(glGetUniformLocation(post_prossesing_shader, "position"), -1.0, -1.0, 0.0);
@@ -133,7 +180,37 @@ void render_process(float delta){
     glBindVertexArray(0);
 }
 
-void render_end(){
+void quad(float *pos,float scale,float *color){
+    glUseProgram(obj_shader);
+
+    glUniform3f(glGetUniformLocation(obj_shader, "position"), pos[0],pos[1],pos[2]);
+    glUniform1f(glGetUniformLocation(obj_shader, "scale"), scale);
+    glUniform4f(glGetUniformLocation(obj_shader, "color"), color[0], color[1], color[2], color[3]);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, weightTexture, 0);
+
+
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+}
+
+void render_process(float delta)
+{
+
+    float pos [3] = { -0.5, -0.5, 0.0};
+    float color [4] = { 1.0,1.0,1.0,1.0};
+    quad(pos,1,color);
+
+    post_processing();
+
+}
+
+void render_end()
+{
     // Liberar os buffers e VAO
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
