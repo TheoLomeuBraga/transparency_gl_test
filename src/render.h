@@ -168,10 +168,7 @@ void render_init()
 void post_processing()
 {
 
-    glDepthMask(GL_TRUE); 
-    glDisable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);  
+    glDepthMask(GL_FALSE); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -207,23 +204,7 @@ void clean_frame(){
 
 void quad(float *pos, float scale, float *color)
 {
-    
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);  
 
-    if (color[3] == 1.0)
-    {
-        glDisable(GL_BLEND);
-        glDepthMask(GL_TRUE); 
-         
-    }
-    else
-    {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        
-        glDepthMask(GL_FALSE);  
-    }
 
     
 
@@ -233,11 +214,10 @@ void quad(float *pos, float scale, float *color)
     glUniform1f(glGetUniformLocation(obj_shader, "scale"), scale);
     glUniform4f(glGetUniformLocation(obj_shader, "color"), color[0], color[1], color[2], color[3]);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, colorTexture);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, weightTexture, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
@@ -250,10 +230,10 @@ const float near = -0.9;
 const float very_near = -1.0;
 
 float opaque_red[4] = {1.0, 0.0, 0.0, 1.0};
-float transparent_green[4] = {0.0, 1.0, 0.0, 0.1};
-float transparent_blue[4] = {0.0, 0.0, 1.0, 0.1};
+float transparent_green[4] = {0.0, 1.0, 0.0, 1.0};
+float transparent_blue[4] = {0.0, 0.0, 1.0, 1.0};
 
-float transparent_pink[4] = {1.0, 0.0, 1.0, 0.1};
+float transparent_pink[4] = {1.0, 0.0, 1.0, 1.0};
 
 void render_process(float delta)
 {
@@ -266,19 +246,16 @@ void render_process(float delta)
     pos[0] = -0.4;
     pos[1] = -0.4;
     pos[2] = not_so_far;
-
     quad(pos, 1, transparent_green);
 
     pos[0] = -0.3;
     pos[1] = -0.3;
     pos[2] = far;
-
     quad(pos, 1, transparent_blue);
 
     pos[0] = -0.2;
     pos[1] = -0.2;
     pos[2] = very_far;
-
     quad(pos, 1, transparent_pink);
 
     post_processing();

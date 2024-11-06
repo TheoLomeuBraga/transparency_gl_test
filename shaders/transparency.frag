@@ -1,14 +1,16 @@
-#version 330 core
-in vec4 fragColor;
+#version 430 core
+uniform vec4 color;
+
 layout(location = 0) out vec4 accumColor;
 layout(location = 1) out float accumWeight;
 
 void main() {
-    float alpha = fragColor.a;      // Opacidade do fragmento atual
-    float weight = alpha;           // Peso baseado na opacidade
+    float alpha = color.a;
+    float weight = alpha;
 
-    // Acumula a cor ponderada pelo peso e a opacidade
-    accumColor.rgb += fragColor.rgb * weight;
+    accumColor.rgb += color.rgb * weight;
     accumColor.a += alpha;
     accumWeight += weight;
+    //accumColor = color;
 }
+
