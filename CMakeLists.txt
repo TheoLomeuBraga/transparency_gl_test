@@ -6,7 +6,7 @@ set(SDL_STATIC ON)
 add_subdirectory(libs/SDL)
 
 #exe
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "-std=c++11 -static-libgcc -static-libstdc++")
 include_directories(src libs/SDL/include)
 
 add_executable(test src/main.cpp)

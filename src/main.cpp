@@ -3,12 +3,13 @@
 #include <SDL3/SDL.h>
 #include "render.h"
 
-
 bool runing = true;
 
 float old_time = 0;
 int main(int argc, char *argv[])
 {
+
+    thread_test();
 
     SDL_Window *window; // Declare a pointer
 
